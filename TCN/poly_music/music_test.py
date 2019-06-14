@@ -55,7 +55,7 @@ dropout = args.dropout
 model = TCN(input_size, input_size, n_channels, kernel_size, dropout=args.dropout)
 
 
-if args.cuda:
+if args.cuda and torch.cuda.is_available():
     model.cuda()
 
 criterion = nn.CrossEntropyLoss()
@@ -72,7 +72,7 @@ def evaluate(X_data, name='Eval'):
         for idx in eval_idx_list:
             data_line = X_data[idx]
             x, y = Variable(data_line[:-1]), Variable(data_line[1:])
-            if args.cuda:
+            if args.cuda and torch.cuda.is_available():
                 x, y = x.cuda(), y.cuda()
             output = model(x.unsqueeze(0)).squeeze(0)
             loss = -torch.trace(torch.matmul(y, torch.log(output).float().t()) +
@@ -93,7 +93,7 @@ def train(ep):
     for idx in train_idx_list:
         data_line = X_train[idx]
         x, y = Variable(data_line[:-1]), Variable(data_line[1:])
-        if args.cuda:
+        if args.cuda and torch.cuda.is_available():
             x, y = x.cuda(), y.cuda()
 
         optimizer.zero_grad()
@@ -133,6 +133,8 @@ if __name__ == "__main__":
                 param_group['lr'] = lr
 
         vloss_list.append(vloss)
+        if ep > 5 and np.isclose(vloss, np.mean(vloss_list[-5:])):
+            break
 
     print('-' * 89)
     model = torch.load(open(model_name, "rb"))
